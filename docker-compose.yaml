@@ -1,0 +1,59 @@
+version: '3.2'
+services:
+  app:
+    build:
+      context: ./UrlSaver
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    ports:
+      - "8014:80"
+      - "44314:443"
+    depends_on:
+      - sqlServer
+      - redis
+  prometheus:
+    build: 
+      context: ./Prometheus
+      dockerfile: Dockerfile
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: always
+    ports:
+      - "3001:3000"   
+    depends_on:
+      - prometheus
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+  sqlServer:
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    container_name: sqlServer
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=pa55w0rd!
+    ports:
+      - "1433:1433"
+  prometheus-mssql-exporter:
+    image: "awaragi/prometheus-mssql-exporter"
+    container_name: prometheus-mssql-exporter
+    restart: always
+    environment:
+      - SERVER=sqlServer
+      - PORT=1433
+      - USERNAME=sa
+      - PASSWORD=pa55w0rd!
+      - DEBUG=app
+    ports:
+      - "4000:4000"
+  
